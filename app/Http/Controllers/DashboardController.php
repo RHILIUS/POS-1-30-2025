@@ -63,10 +63,10 @@ class DashboardController extends Controller
         ];
 
         // Sales comparison data (line chart)
-        $salesComparison = Order_Detail::selectRaw("CONVERT(VARCHAR, created_at, 23) as date, SUM(subtotal) as total")
-            ->groupBy(DB::raw("CONVERT(VARCHAR, created_at, 23)"))
-            ->orderBy(DB::raw("CONVERT(VARCHAR, created_at, 23)"), 'asc')
-            ->get();
+        $salesComparison = Order_Detail::selectRaw("DATE_FORMAT(created_at, '%Y-%m-%d') as date, SUM(subtotal) as total")
+    ->groupBy(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d')"))
+    ->orderBy(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d')"), 'asc')
+    ->get();
 
         $salesData = [
             'labels' => $salesComparison->pluck('date'),
