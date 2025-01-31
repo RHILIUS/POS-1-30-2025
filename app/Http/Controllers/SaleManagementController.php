@@ -64,7 +64,7 @@ class SaleManagementController extends Controller
         return view('sales.index', compact('orders', 'startDate', 'endDate'));
     }
 
-    public function view($order_id)
+    public function view1($order_id)
     {
         // Fetch the order details using join and leftJoin to match the SQL query
         $order = DB::table('orders')
@@ -106,6 +106,53 @@ class SaleManagementController extends Controller
             ->first();
 
         // If the order is not found, redirect with an error
+        if (!$order) {
+            return redirect()->route('sales.index')->with('error', 'Order not found.');
+        }
+
+        return view('sales.view', compact('order'));
+    }
+
+    public function view($order_id)
+    {
+        $order = DB::table('orders')
+            ->join('transactions', 'orders.order_id', '=', 'transactions.order_id')
+            ->join('order_details', 'orders.order_id', '=', 'order_details.order_id')
+            ->join('products', 'order_details.product_id', '=', 'products.product_id')
+            ->leftJoin('customers', 'orders.customer_id', '=', 'customers.customer_id')
+            ->leftJoin('users', 'orders.user_id', '=', 'users.id')
+            ->select(
+                'orders.order_id',
+                'orders.order_date',
+                'orders.customer_id',
+                DB::raw("COALESCE(customers.name, 'Walk-in') AS customer_name"),
+                'orders.total_amount',
+                'orders.discount',
+                'orders.tax',
+                'transactions.amount_paid',
+                'transactions.change',
+                'transactions.payment_method',
+                DB::raw("GROUP_CONCAT(CONCAT(products.name, ' (Qty: ', CAST(order_details.quantity AS CHAR), ' x ', CAST(order_details.price AS CHAR), ')') ORDER BY products.name SEPARATOR ', ') AS products_brought"),
+                'users.name AS username',
+                'users.role AS user_role'
+            )
+            ->where('orders.order_id', $order_id)
+            ->groupBy(
+                'orders.order_id',
+                'orders.order_date',
+                'orders.customer_id',
+                'customers.name',
+                'orders.total_amount',
+                'orders.discount',
+                'orders.tax',
+                'transactions.amount_paid',
+                'transactions.change',
+                'transactions.payment_method',
+                'users.name',
+                'users.role'
+            )
+            ->first();
+
         if (!$order) {
             return redirect()->route('sales.index')->with('error', 'Order not found.');
         }
